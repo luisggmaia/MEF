@@ -5,9 +5,9 @@ classdef Elem < handle
         index uint8 % index of the element
         node_i Node % first node of the element
         node_f Node % second node of the element
-        q double % Element load. Positive, if acting in the same direction as the element (i -> f)
         E double % Element modulus of elasticity
         S double % Element cross-sectional area
+        q double % Element load. Positive, if acting in the same direction as the element (i -> f)
     end
 
     properties (Dependent)
@@ -54,10 +54,8 @@ classdef Elem < handle
             sinn = elem.s;
             coss = elem.c;
 
-            r_e = [coss, -sinn, 0, 0;
-                   sinn, coss, 0, 0;
-                   0, 0, coss, -sinn;
-                   0, 0, sinn, coss];
+            r_e = [coss, -sinn;
+                   sinn, coss];
         end
 
         function k_e = get.K_e(elem)
@@ -101,7 +99,7 @@ classdef Elem < handle
                 t double % 0 < t < 1
             end
 
-            d = Co(elem.node_i.d.x + (elem.node_f.d.x - elem.node_i.d.x)*t, elem.node_i.d.y + (elem.node_f.d.y - elem.node_i.d.y)*t);
+            d = Co(elem.node_i.d.p + (elem.node_f.d.p - elem.node_i.d.p)*t);
         end
 
         function d = local_displacement(elem, t)
@@ -110,7 +108,7 @@ classdef Elem < handle
                 t double % 0 < t < 1
             end
             
-            d = Co(elem.node_i.d + (elem.node_f.d - elem.node_i.d)*t;
+            d = Co(transpose(elem.R_e)*(elem.node_i.d.p + (elem.node_f.d.p - elem.node_i.d.p)*t));
         end
     end
 end
