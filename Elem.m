@@ -17,6 +17,7 @@ classdef Elem < handle
         R_e
         K_e
         F_e
+        N_e
     end
 
     methods
@@ -73,6 +74,10 @@ classdef Elem < handle
             coss = elem.c;
 
             f_e = elem.q*elem.L_e/2*[coss; sinn; coss; sinn];
+        end
+
+        function n_e = get.N_e(elem)
+            n_e = elem.E*elem.S/elem.L_e*(elem.c*(elem.node_f.d.x - elem.node_i.d.x) + elem.s*(elem.node_f.d.y - elem.node_i.d.y));
         end
 
         function add_load(elem, load)

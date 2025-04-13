@@ -22,11 +22,12 @@ classdef Node < handle
             node.co = co;
             node.cst = cst;
             node.F = F;
+            node.d = Co(0, 0);
         end
 
         function set.cst(node, constraint)
-            node.cst.x = logical(constraint.x);
-            node.cst.y = logical(constraint.y);
+            constraint.p = logical(constraint.p);
+            node.cst = constraint;
         end
         
         function add_force(node, force)

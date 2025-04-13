@@ -15,7 +15,7 @@ classdef Co < handle
             arguments
                 x = []
                 y = []
-                p = []
+                p (2, :) = []
             end
 
             if isempty(p)
