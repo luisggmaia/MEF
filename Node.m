@@ -32,7 +32,7 @@ classdef Node < handle
 
         function set.co(node, co)
             node.co = co;
-            set(node.h, 'XData', co.x, 'YData', co.y);
+            node.update_plot( )
         end
 
         function set.cst(node, constraint)
@@ -73,6 +73,19 @@ classdef Node < handle
                 node.t = text(node.co.x, node.co.y, num2str(node.index));
             else
                 set(node.t, 'Color', color);
+            end
+        end
+
+        function update_plot(node)
+            arguments
+                node
+            end
+
+            if ~isempty(node.h)
+                set(node.h, 'XData', node.co.x, 'YData', node.co.y);
+            end
+            if ~isempty(node.t)
+                set(node.t, 'XData', node.co.x, 'YData', node.co.y);
             end
         end
 
