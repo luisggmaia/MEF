@@ -1,52 +1,58 @@
 classdef Co < handle
-    properties (Access = private)
-        xx
-        yy
+    properties
+        p
     end
 
     properties (Dependent)
         x
         y
-        p
+        z
     end
 
     methods
-        function co = Co(x, y, p)
+        function co = Co(x, y, z, p)
             arguments
                 x = []
                 y = []
-                p (2, :) = []
+                z = []
+                p = []
             end
 
             if isempty(p)
-                co.xx = x;
-                co.yy = y;    
+                co.p = [x; y; z];
             else
-                co.xx = p(1);
-                co.yy = p(2);
+                co.p = p;
             end
         end
 
         function P = get.p(co)
-            P = [co.xx; co.yy];
+            P = co.p;
         end
         function set.p(co, p)
-            co.xx = p(1);
-            co.yy = p(2);
+            co.p = p;
         end
 
         function X = get.x(co)
-            X = co.xx;
+            X = co.p(1);
         end
         function set.x(co, x)
-            co.xx = x;
+            co.p(1) = x;
         end
 
         function Y = get.y(co)
-            Y = co.yy;
+            Y = co.p(2);
         end
         function set.y(co, y)
-            co.yy = y;
+            co.p(2) = y;
+        end
+        
+        function Z = get.z(co)
+            Z = co.p(3);
+        end
+        function set.z(co, z)
+            co.p(3) = z;
         end
     end
 end
+
+

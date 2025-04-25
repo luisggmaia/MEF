@@ -1,9 +1,10 @@
-% Trellis structure
+% Beam structure
 
 classdef Est < handle
     properties
-        nodes (1, :) Node = Node.empty(1, 0); % Nodes of the trellis
-        elems (1, :) Elem = Elem.empty(1, 0); % Elements of the trellis
+        plot logical
+        nodes (1, :) Node = Node.empty(1, 0); % Nodes of the Beam
+        elems (1, :) Elem = Elem.empty(1, 0); % Elements of the Beam
     end
 
     properties (Access = private, Dependent)
@@ -20,6 +21,21 @@ classdef Est < handle
     end
 
     methods
+        function est = Est(plot)
+            arguments
+                plot logical = true;
+            end
+
+            est.plot = plot;
+            
+            if plot
+                figure( );
+                xlabel('$x$', 'Interpreter', 'latex');
+                ylabel('$y$', 'Interpreter', 'latex');
+                hold on;
+            end
+        end
+
         function n_no = get.n_nodes(est)
             n_no = length(est.nodes);
         end
@@ -42,12 +58,15 @@ classdef Est < handle
                 est
                 index uint8
                 co Co
-                cst Co = Co(false, false)
-                F Co = Co(0, 0)
+                cst Co = Co(false, false, false)
+                F Co = Co(0, 0, 0)
             end
 
             if ~est.node_exist(index)
                 est.nodes(end + 1) = Node(index, co, cst, F);
+                if est.plot
+                    est.nodes(end).plot('black');
+                end
             else
                 error('Node index already exists!')
             end
@@ -73,7 +92,9 @@ classdef Est < handle
             end
             
             if est.node_exist(index)
-                est.nodes([est.nodes.index] == index) = [];
+                i = [est.nodes.index] == index;
+                est.nodes(i).unplot( );
+                est.nodes(i) = [];
             else
                 error('Node index does not exist!');
             end
@@ -119,7 +140,7 @@ classdef Est < handle
             b = any([est.elems.index] == index);
         end
 
-        function create_elem(est, index, index_node_i, index_node_f, E, S, q)
+        function create_elem(est, index, index_node_i, index_node_f, E, S, I, q, p)
             arguments
                 est
                 index uint8 % Index of the element.
@@ -127,7 +148,9 @@ classdef Est < handle
                 index_node_f uint8
                 E double
                 S double
+                I double
                 q double = 0
+                p double = 0
             end
 
             b_elem = est.elem_exist(index);
@@ -137,7 +160,10 @@ classdef Est < handle
             if ~b_elem && b_node_i && b_node_f
                 node_i = est.get_node(index_node_i);
                 node_f = est.get_node(index_node_f);
-                est.elems(end + 1) = Elem(index, node_i, node_f, E, S, q);
+                est.elems(end + 1) = Elem(index, node_i, node_f, E, S, I, q, p);
+                if est.plot
+                    est.elems(end).plot('black');
+                end
             else
                 error('Element index already exists or one of the nodes does not exist!')
             end
@@ -163,30 +189,52 @@ classdef Est < handle
             end
             
             if est.elem_exist(index)
-                est.elems([est.elems.index] == index) = [];
+                i = [est.elems.index] == index;
+                est.elems(i).unplot( );
+                est.elems(i) = [];
             else
                 error('Element index does not exist!');
             end
         end
 
-        function add_load(est, index, load)
+        function add_q_load(est, index, load)
             arguments
                 est
                 index uint8 % Index of the element.
                 load double
             end
 
-            est.get_elem(index).add_load(load);
+            est.get_elem(index).add_q_load(load);
         end
 
-        function remove_load(est, index, load)
+        function add_p_load(est, index, load)
             arguments
                 est
                 index uint8 % Index of the element.
                 load double
             end
 
-            est.get_elem(index).remove_load(load);
+            est.get_elem(index).add_p_load(load);
+        end
+
+        function remove_q_load(est, index, load)
+            arguments
+                est
+                index uint8 % Index of the element.
+                load double
+            end
+
+            est.get_elem(index).remove_q_load(load);
+        end
+
+        function remove_p_load(est, index, load)
+            arguments
+                est
+                index uint8 % Index of the element.
+                load double
+            end
+
+            est.get_elem(index).remove_p_load(load);
         end
 
         function pos = get_node_pos(est, index)
@@ -203,52 +251,47 @@ classdef Est < handle
         end
 
         function k = get.K(est)
-            k = zeros(2*est.n_nodes, 2*est.n_nodes);
+            k = zeros(3*est.n_nodes, 3*est.n_nodes);
 
             for e = est.elems
-                i = 2*est.get_node_pos(e.node_i.index) - 1;
-                j = 2*est.get_node_pos(e.node_f.index) - 1;
+                i = 3*est.get_node_pos(e.node_i.index) - 2;
+                j = 3*est.get_node_pos(e.node_f.index) - 2;
 
-                k([i:i + 1, j:j + 1], [i:i + 1, j:j + 1]) = k([i:i + 1, j:j + 1], [i:i + 1, j:j + 1]) + e.K_e;
+                k([i:i + 2, j:j + 2], [i:i + 2, j:j + 2]) = k([i:i + 2, j:j + 2], [i:i + 2, j:j + 2]) + e.K_e;
             end
         end
 
         function f = get.F(est)
-            f = zeros(2*est.n_nodes, 1);
+            f = zeros(3*est.n_nodes, 1);
 
             for n = est.nodes
-                i = 2*est.get_node_pos(n.index) - 1;
-                f(i:i + 1) = f(i:i + 1) + n.F.p;
+                i = 3*est.get_node_pos(n.index) - 2;
+                f(i:i + 2) = f(i:i + 2) + n.F.p;
             end
 
             for e = est.elems
-                i = 2*est.get_node_pos(e.node_i.index) - 1;
-                j = 2*est.get_node_pos(e.node_f.index) - 1;
+                i = 3*est.get_node_pos(e.node_i.index) - 2;
+                j = 3*est.get_node_pos(e.node_f.index) - 2;
 
-                f([i:i + 1, j:j + 1]) = f([i:i + 1, j:j + 1]) + e.F_e;
+                f([i:i + 2, j:j + 2]) = f([i:i + 2, j:j + 2]) + e.F_e;
             end
         end
 
         function constraints = get.cst(est)
-            constraints = false(2*est.n_nodes, 1);
+            constraints = false(3*est.n_nodes, 1);
 
             for n = est.nodes
-                i = 2*est.get_node_pos(n.index) - 1;
-                constraints(i:i + 1) = n.cst.p;
+                i = 3*est.get_node_pos(n.index) - 2;
+                constraints(i:i + 2) = n.cst.p;
             end
         end
 
         function dd = get.d(est)
-            dd = zeros(2*est.n_nodes, 1);
-            nodes_cst = 1:1:2*est.n_nodes;
+            dd = zeros(3*est.n_nodes, 1);
+            nodes_cst = 1:1:3*est.n_nodes;
             nodes_cst = nodes_cst(~est.cst);
 
             dd(nodes_cst) = est.K(nodes_cst, nodes_cst)\est.F(nodes_cst);
-            
-            for n = est.nodes
-                i = 2*est.get_node_pos(n.index) - 1;
-                n.d.p = dd(i:i + 1);
-            end
         end
 
         function n = get.N(est)
@@ -256,6 +299,17 @@ classdef Est < handle
 
             for e = est.elems
                 n(e.index) = e.N_e;
+            end
+        end
+
+        function analyze(est)
+            dd = est.d;
+            r = est.K*dd - est.F;
+
+            for n = est.nodes
+                i = 3*est.get_node_pos(n.index) - 2;
+                n.d.p = dd(i:i + 2);
+                n.add_force(r(i:i + 2));
             end
         end
     end
