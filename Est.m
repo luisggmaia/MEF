@@ -13,11 +13,10 @@ classdef Est < handle
     end
 
     properties (Dependent)
+        cst
         K
         F
-        cst
         d
-        N
     end
 
     methods
@@ -53,17 +52,18 @@ classdef Est < handle
             b = any([est.nodes.index] == index);
         end
 
-        function create_node(est, index, co, cst, F)
+        function create_node(est, index, co, cst, F, k)
             arguments
                 est
                 index uint8
                 co Co
                 cst Co = Co(false, false, false)
                 F Co = Co(0, 0, 0)
+                k double = 0
             end
 
             if ~est.node_exist(index)
-                est.nodes(end + 1) = Node(index, co, cst, F);
+                est.nodes(end + 1) = Node(index, co, cst, F, k);
                 if est.plot
                     est.nodes(end).plot('black');
                 end
@@ -100,37 +100,6 @@ classdef Est < handle
             end
         end
 
-        function set_cst(est, index, constraint)
-            arguments
-                est
-                index uint8 % Index of the node.
-                constraint Co
-            end
-
-            node = est.get_node(index);
-            node.cst = constraint;
-        end
-
-        function add_force(est, index, force)
-            arguments
-                est
-                index uint8 % Index of the node.
-                force Co
-            end
-
-            est.get_node(index).add_force(force);
-        end
-
-        function remove_force(est, index, force)
-            arguments
-                est
-                index uint8 % Index of the node.
-                force Co
-            end
-
-            est.get_node(index).remove_force(force);
-        end
-
         function b = elem_exist(est, index)
             arguments
                 est
@@ -149,8 +118,8 @@ classdef Est < handle
                 E double
                 S double
                 I double
-                q double = 0
-                p double = 0
+                q function_handle = @(x) 0;
+                p function_handle = @(x) 0;
             end
 
             b_elem = est.elem_exist(index);
@@ -197,46 +166,6 @@ classdef Est < handle
             end
         end
 
-        function add_q_load(est, index, load)
-            arguments
-                est
-                index uint8 % Index of the element.
-                load double
-            end
-
-            est.get_elem(index).add_q_load(load);
-        end
-
-        function add_p_load(est, index, load)
-            arguments
-                est
-                index uint8 % Index of the element.
-                load double
-            end
-
-            est.get_elem(index).add_p_load(load);
-        end
-
-        function remove_q_load(est, index, load)
-            arguments
-                est
-                index uint8 % Index of the element.
-                load double
-            end
-
-            est.get_elem(index).remove_q_load(load);
-        end
-
-        function remove_p_load(est, index, load)
-            arguments
-                est
-                index uint8 % Index of the element.
-                load double
-            end
-
-            est.get_elem(index).remove_p_load(load);
-        end
-
         function pos = get_node_pos(est, index)
             arguments
                 est
@@ -258,6 +187,12 @@ classdef Est < handle
                 j = 3*est.get_node_pos(e.node_f.index) - 2;
 
                 k([i:i + 2, j:j + 2], [i:i + 2, j:j + 2]) = k([i:i + 2, j:j + 2], [i:i + 2, j:j + 2]) + e.K_e;
+            end
+
+            for n = est.nodes
+                i = 3*est.get_node_pos(n) - 2;
+
+                k(i:i + 2, i:i + 2) = k(i:i + 2, i:i + 2) + diag(n.k.p);
             end
         end
 
@@ -292,14 +227,6 @@ classdef Est < handle
             nodes_cst = nodes_cst(~est.cst);
 
             dd(nodes_cst) = est.K(nodes_cst, nodes_cst)\est.F(nodes_cst);
-        end
-
-        function n = get.N(est)
-            n = zeros(est.n_elems, 1);
-
-            for e = est.elems
-                n(e.index) = e.N_e;
-            end
         end
 
         function analyze(est)

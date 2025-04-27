@@ -6,6 +6,7 @@ classdef Node < handle
         co Co % Coordinates of the node (global referential)
         cst Co % Constraints of the node (global referential, (cst_x, cst_y, cst_theta))
         F Co % Forces and moment applied to the node (global referential, (F_x, F_y, M))
+        k Co % Additional stiffness (e. g. by some spring) (globa referential (k_x, k_y, k_theta))
         d Co % Displacement of the node (global referential, (d_x, d_y, d_theta))
     end
 
@@ -15,18 +16,20 @@ classdef Node < handle
     end
 
     methods
-        function node = Node(index, co, cst, F)
+        function node = Node(index, co, cst, F, k)
             arguments
                 index uint8
                 co Co
                 cst Co = Co(false, false, false)
                 F Co = Co(0, 0, 0)
+                k Co = Co(0, 0, 0)
             end
             
             node.index = index;
             node.co = co;
             node.cst = cst;
             node.F = F;
+            node.k = k;
             node.d = Co(0, 0, 0);
         end
 
@@ -70,7 +73,9 @@ classdef Node < handle
                 set(node.h, 'Color', color);
             end
             if isempty(node.t)
-                node.t = text(node.co.x, node.co.y, num2str(node.index));
+                xl = xlim;
+                yl = ylim;
+                node.t = text(node.co.x + 0.01*(xl(2) - xl(1)), node.co.y + 0.01*(yl(2) - yl(1)), num2str(node.index), 'Color', color);
             else
                 set(node.t, 'Color', color);
             end
@@ -85,7 +90,9 @@ classdef Node < handle
                 set(node.h, 'XData', node.co.x, 'YData', node.co.y);
             end
             if ~isempty(node.t)
-                set(node.t, 'XData', node.co.x, 'YData', node.co.y);
+                xl = xlim;
+                yl = ylim;
+                set(node.t, 'XData', node.co.x + 0.01*(xl(2) - xl(1)), 'YData', node.co.y + 0.01*(yl(2) - yl(1)));
             end
         end
 
