@@ -105,7 +105,7 @@ classdef Elem < handle
             l_e = elem.L_e;
             r_e = elem.R_e;
 
-            f_e = r_e*l_e*integral(@(x) [Q(l_e*x)*(1 - x); P(l_e*x)*(2*x^3 - 3*x^2 + 1); P(l_e*x)*l_e*(x^3 - 2*x^2 + x); Q(x*l_e)*x; P(l_e*x)*(-2*x^3 + 3*x^2); P(x)*l_e*(x^3 - x^2)], 0, 1, "ArrayValued", true);
+            f_e = r_e*l_e*integral(@(t) [Q(l_e*t)*(1 - t); P(l_e*t)*(2*t^3 - 3*t^2 + 1); P(l_e*t)*l_e*(t^3 - 2*t^2 + t); Q(t*l_e)*t; P(l_e*t)*(-2*t^3 + 3*t^2); P(l_e*t)*l_e*(t^3 - t^2)], 0, 1, "ArrayValued", true);
         end
 
         function add_q_load(elem, load)

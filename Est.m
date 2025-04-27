@@ -16,6 +16,8 @@ classdef Est < handle
         cst
         K
         F
+        F_star
+        R
         d
     end
 
@@ -190,7 +192,7 @@ classdef Est < handle
             end
 
             for n = est.nodes
-                i = 3*est.get_node_pos(n) - 2;
+                i = 3*est.get_node_pos(n.index) - 2;
 
                 k(i:i + 2, i:i + 2) = k(i:i + 2, i:i + 2) + diag(n.k.p);
             end
@@ -202,6 +204,22 @@ classdef Est < handle
             for n = est.nodes
                 i = 3*est.get_node_pos(n.index) - 2;
                 f(i:i + 2) = f(i:i + 2) + n.F.p;
+            end
+
+            for e = est.elems
+                i = 3*est.get_node_pos(e.node_i.index) - 2;
+                j = 3*est.get_node_pos(e.node_f.index) - 2;
+
+                f([i:i + 2, j:j + 2]) = f([i:i + 2, j:j + 2]) + e.F_e;
+            end
+        end
+
+        function f = get.F_star(est)
+            f = zeros(3*est.n_nodes, 1);
+
+            for n = est.nodes
+                i = 3*est.get_node_pos(n.index) - 2;
+                f(i:i + 2) = f(i:i + 2) + n.F_star.p;
             end
 
             for e = est.elems
@@ -229,14 +247,18 @@ classdef Est < handle
             dd(nodes_cst) = est.K(nodes_cst, nodes_cst)\est.F(nodes_cst);
         end
 
+        function r = get.R(est)
+            r = est.K*est.d - est.F_star;
+        end
+
         function analyze(est)
             dd = est.d;
-            r = est.K*dd - est.F;
+            r = est.K*dd - est.F_star;
 
             for n = est.nodes
                 i = 3*est.get_node_pos(n.index) - 2;
                 n.d.p = dd(i:i + 2);
-                n.add_force(r(i:i + 2));
+                n.R.p = r(i:i + 2);
             end
         end
     end

@@ -5,7 +5,8 @@ classdef Node < handle
         index uint8 % index of the node
         co Co % Coordinates of the node (global referential)
         cst Co % Constraints of the node (global referential, (cst_x, cst_y, cst_theta))
-        F Co % Forces and moment applied to the node (global referential, (F_x, F_y, M))
+        F_star Co % Forces and moment applied to the node (global referential, (F_x, F_y, M))
+        R Co % Reaction forces and moment of the node (global referential, (R_x, R_y, M))
         k Co % Additional stiffness (e. g. by some spring) (globa referential (k_x, k_y, k_theta))
         d Co % Displacement of the node (global referential, (d_x, d_y, d_theta))
     end
@@ -15,32 +16,52 @@ classdef Node < handle
         t = []
     end
 
+    properties (Dependent)
+        F
+    end
+
     methods
-        function node = Node(index, co, cst, F, k)
+        function node = Node(index, co, cst, F_star, R, k)
             arguments
                 index uint8
                 co Co
                 cst Co = Co(false, false, false)
-                F Co = Co(0, 0, 0)
+                F_star Co = Co(0, 0, 0)
+                R Co = Co(0, 0, 0)
                 k Co = Co(0, 0, 0)
             end
             
             node.index = index;
             node.co = co;
             node.cst = cst;
-            node.F = F;
+            node.F_star = F_star;
+            node.R = R;
             node.k = k;
             node.d = Co(0, 0, 0);
         end
 
         function set.co(node, co)
+            arguments
+                node
+                co Co
+            end
+
             node.co = co;
             node.update_plot( )
         end
 
         function set.cst(node, constraint)
+            arguments
+                node
+                constraint Co
+            end
+
             constraint.p = logical(constraint.p);
             node.cst = constraint;
+        end
+
+        function F = get.F(node)
+            F = Co([], [], [], node.F_star.p + node.R.p);
         end
         
         function add_force(node, force)
@@ -49,7 +70,7 @@ classdef Node < handle
                 force Co
             end
 
-            node.F.p = node.F.p + force.p;
+            node.F_star.p = node.F_star.p + force.p;
         end
 
         function remove_force(node, force)
@@ -58,7 +79,7 @@ classdef Node < handle
                 force Co
             end
 
-            node.F.p = node.F.p - force.p;
+            node.F_star.p = node.F_star.p - force.p;
         end
 
         function plot(node, color)
